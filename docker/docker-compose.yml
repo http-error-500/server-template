@@ -1,0 +1,48 @@
+version: '3.2'
+
+services:
+  nginx:
+    container_name: nginx
+    image: nginx
+    volumes:
+      - ~/certbot/.well-known:/var/www/html/.well-known:ro # certbot well-known
+      - ./nginx:/etc/nginx/conf.d:ro # nginx config
+      - /etc/letsencrypt:/etc/letsencrypt:ro # certificates
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    networks:
+      - dco
+
+  dco_db:
+    container_name: dco_db
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: jebollemoeder
+      POSTGRES_DB: db
+    volumes:
+      - ./dco-db:/var/lib/postgresql/data:z
+    networks:
+      - dco
+
+  dco_main:
+    container_name: dco_main
+    environment:
+      DB_USER: postgres
+      DB_PASSWORD: jebollemoeder
+      DB_NAME: db
+      DB_HOST: postgres
+      DB_PORT: 5432
+    build:
+      context: drivecleanonly
+      dockerfile: docker/Dockerfile
+    depends_on:
+      - dco_db
+    restart: always
+    networks:
+      - dco
+
+networks:
+  dco:
